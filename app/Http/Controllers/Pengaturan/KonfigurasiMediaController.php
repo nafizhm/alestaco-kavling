@@ -73,6 +73,15 @@ class KonfigurasiMediaController extends Controller
 
     public function update(Request $request)
     {
+        \Log::info('UPLOAD DEBUG', [
+    'method' => $request->method(),
+    'content_type' => $request->header('content-type'),
+    'all' => $request->all(),
+    'files' => $request->allFiles(),
+    'has_nama_file' => $request->hasFile('nama_file'),
+    'nama_file_error' => $request->file('nama_file')?->getErrorMessage(),
+]);
+
         $id = $request->input('id');
         $konfigurasiMedia = KonfigurasiMedia::findOrFail($id);
 
