@@ -66,7 +66,7 @@
 </head>
 
 <body class="d-flex  overflow-hidden overlay align-items-center justify-content-center min-vh-100"
-    style="background-image: url('{{ asset('assets/img/bageee.webp') }}?v=1.0');">
+    style="background-image: url('{{ asset('assets/img/image.png') }}?v=1.0');">
 
     <div class="container">
         <div class="row justify-content-center">
