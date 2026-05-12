@@ -174,7 +174,8 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
         Route::get('lokasi-kavling/export/{id}', [LokasiKavlingController::class, 'exportDetail'])->name('lokasi-kavling.export');
         Route::post('lokasi-kavling/upload-excel', [LokasiKavlingController::class, 'uploadExcel'])->name('lokasi-kavling.uploadExcel');
 
-        Route::resource('kavling', KavlingController::class)->except('create', 'store', 'destroy');
+        Route::resource('kavling', KavlingController::class);
+        Route::get('/get-lokasi-kavling', [KavlingController::class, 'getLokasiKavling'])->name('kavling.getLokasi');
         Route::post('kavling/uploud', [KavlingController::class, 'uploud'])->name('kavling.uploud');
         Route::get('kavling/{id}/lampiran', [KavlingController::class, 'lampiran'])->name('kavling.lampiran');
         Route::post('kavling/lampiran/upload', [KavlingController::class, 'uploadLampiran'])->name('kavling.lampiran.upload');

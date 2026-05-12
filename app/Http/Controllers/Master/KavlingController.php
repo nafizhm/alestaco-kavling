@@ -22,7 +22,7 @@ class KavlingController extends Controller
     public function index(Request $request)
     {
         $permissions = HakAksesController::getUserPermissions();
-
+    
         if ($request->ajax()) {
             $data = KavlingPeta::select(
                 'kavling_peta.*',
@@ -59,20 +59,57 @@ class KavlingController extends Controller
                 ->addColumn('lokasi', function ($row) {
                     return $row->kode_kavling;
                 })
-                ->addColumn('action', function ($row) use ($permissions) {
+               ->addColumn('action', function ($row) use ($permissions) {
+
                     $btn = '<div class="text-center">';
+                    $deleteUrl = route('kavling.destroy', $row->id);
+
                     if ($permissions['edit']) {
-                        $btn .= '<a href="' . route('kavling.edit', $row->id) . '" class="edit btn btn-warning btn-sm mx-1">Edit</a>';
+                        $btn .= '
+                            <a href="' . route('kavling.edit', $row->id) . '"
+                                class="edit btn btn-warning btn-sm">
+                                Edit
+                            </a>
+                        ';
                     }
-                    $btn .= '<a href="' . route('kavling.lampiran', $row->id) . '" class="btn btn-success btn-sm">Lampiran</a>';
+
+                    $btn .= '
+                        <a href="' . route('kavling.lampiran', $row->id) . '"
+                            class="btn btn-success btn-sm">
+                            Lampiran
+                        </a>
+                    ';
+
+                      if ($permissions['hapus']) {
+                        $btn .= '
+                        <form action="' . e($deleteUrl) . '" method="POST" style="display:inline;">
+                            ' . csrf_field() . method_field('DELETE') . '
+                            <button type="submit" class="delete-button btn btn-danger btn-sm mt-1">
+                                Hapus
+                            </button>
+                        </form>';
+                    }
+
+                    $btn .= '</div>';
 
                     return $btn;
                 })
+                
                 ->rawColumns(['panjang', 'lebar', 'luas', 'action'])
                 ->make(true);
         }
 
         return view('admin.master.kavling.index', compact('permissions'));
+    }
+
+    public function getLokasiKavling(Request $request)
+    {
+        $data = LokasiKavling::select(
+            'id',
+            'nama_kavling'
+        )->get();
+
+        return response()->json($data);
     }
 
     public function edit($id)
@@ -158,6 +195,65 @@ class KavlingController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Data berhasil disimpan'
+            ], 500);
+        }
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'id_lokasi'       => 'required',
+            'kode_kavling'    => 'required',
+            'panjang_kanan'   => 'required|numeric',
+            'panjang_kiri'    => 'required|numeric',
+            'lebar_depan'     => 'required|numeric',
+            'lebar_belakang'  => 'required|numeric',
+            'luas_tanah'      => 'required|numeric',
+            'hrg_meter'       => 'required',
+            'hrg_jual'        => 'required',
+            'keterangan'      => 'nullable',
+        ], [
+            'id_lokasi.required'       => 'Nama cluster wajib dipilih',
+            'kode_kavling.required'    => 'Kode kavling wajib diisi',
+            'panjang_kanan.required'   => 'Panjang kanan wajib diisi',
+            'panjang_kiri.required'    => 'Panjang kiri wajib diisi',
+            'lebar_depan.required'     => 'Lebar depan wajib diisi',
+            'lebar_belakang.required'  => 'Lebar belakang wajib diisi',
+            'luas_tanah.required'      => 'Luas tanah wajib diisi',
+            'hrg_meter.required'       => 'Harga per meter wajib diisi',
+            'hrg_jual.required'        => 'Harga jual wajib diisi',
+        ]);
+
+        $hargaPerMeter = str_replace('.', '', $request->hrg_meter);
+        $hargaPerMeter = str_replace(',', '.', $hargaPerMeter);
+
+        $hargaJual = str_replace('.', '', $request->hrg_jual);
+        $hargaJual = str_replace(',', '.', $hargaJual);
+
+        try {
+        KavlingPeta::create([
+            'id_lokasi'       => $request->id_lokasi,
+            'kode_kavling'    => $request->kode_kavling,
+            'panjang_kanan'   => $request->panjang_kanan,
+            'panjang_kiri'    => $request->panjang_kiri,
+            'lebar_depan'     => $request->lebar_depan,
+            'lebar_belakang'  => $request->lebar_belakang,
+            'luas_tanah'      => $request->luas_tanah,
+            'hrg_meter' => $hargaPerMeter,
+            'hrg_jual'        => $hargaJual,
+            'keterangan'      => $request->keterangan,
+        ]);
+
+         return response()->json([
+                'success' => true,
+                'message' => 'Data berhasil disimpan',
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menyimpan data!',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -445,5 +541,27 @@ class KavlingController extends Controller
         $writer = new Xlsx($spreadsheet);
         $writer->save('php://output');
         exit;
+    }
+
+     public function destroy($id)
+    {
+        $data = KavlingPeta::findOrFail($id);
+
+        if (!$data) {
+            return response()->json(['success' => false, 'message' => 'Data tidak ditemukan'], 404);
+        }
+
+        DB::beginTransaction();
+        try {
+            $data->delete();
+
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'Data berhasil dihapus'], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['success' => false, 'message' => 'Terjadi Kesalahan', 'error' => $e->getMessage()], 500);
+        }
     }
 }
