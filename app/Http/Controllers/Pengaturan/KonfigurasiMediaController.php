@@ -113,7 +113,10 @@ class KonfigurasiMediaController extends Controller
                 $filename = Str::slug($konfigurasiMedia->jenis_data) . '_' . time();
                 $webpName = $filename . '.webp';
 
-                $destinationPath = public_path('config_media');
+                $destinationPath = env('MEDIA_UPLOAD_PATH', $_SERVER['DOCUMENT_ROOT'] ?? public_path('config_media'));
+                if (!str_ends_with($destinationPath, 'config_media')) {
+                    $destinationPath .= '/config_media';
+                }
                 $fullSavePath = $destinationPath . '/' . $webpName;
 
                 if (!file_exists($destinationPath)) {
@@ -145,6 +148,7 @@ class KonfigurasiMediaController extends Controller
                 }
 
                 imagewebp($img, $fullSavePath, 80);
+                chmod($fullSavePath, 0644);
                 imagedestroy($img);
 
                 $konfigurasiMedia->update([
