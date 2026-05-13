@@ -32,7 +32,7 @@
                             </div>
                         </div>
                         <hr>
-                        <h4>Daftar Foto</h4>
+                        <h6 class="fw-bold">Daftar Foto</h6>
                         <div class="row">
                             @foreach ($fotos as $foto)
                                 <div class="col-md-3 mb-3 text-center">

@@ -34,13 +34,11 @@
                                 <tr>
                                     <th width="50px">No</th>
                                     <th>Nama Cluster</th>
-                                    <th>Lokasi</th>
                                     <th>Panjang</th>
                                     <th>Lebar</th>
                                     <th>Luas</th>
                                     <th>Harga</th>
-                                    <th>Keterangan</th>
-                                    <th width="150px" class="text-center">Action</th>
+                                    <th width="200px" class="text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -232,6 +230,7 @@
         var permissions = @json($permissions);
         var showActionColumn = (permissions['edit'] == 1 || permissions['hapus'] == 1);
         var audio = new Audio('{{ asset('audio/notification.ogg') }}');
+        var table;
 
          $(document).ready(function() {
                $('.select-lokasi').select2({
@@ -287,7 +286,7 @@
         var showActionColumn = (permissions['edit'] == 1);
 
         $(function() {
-            var table = $('.data-table').DataTable({
+            table = $('.data-table').DataTable({
                 processing: false,
                 serverSide: true,
                 ordering: false,
@@ -304,11 +303,10 @@
                         data: 'nama_cluster',
                         name: 'nama_cluster',
                         orderable: false,
-                        searchable: true
-                    },
-                    {
-                        data: 'lokasi',
-                        name: 'lokasi'
+                        searchable: true,
+                        render: function(data, type, row) {
+                            return data + '<br><small class="text-muted">Blok ' + row.lokasi + '</small>';
+                        }
                     },
                     {
                         data: 'panjang',
@@ -335,12 +333,6 @@
                         searchable: false
                     },
                     {
-                        data: 'keterangan',
-                        name: 'keterangan',
-                        orderable: false,
-                        searchable: false
-                    },
-                    {
                         data: 'action',
                         name: 'action',
                         orderable: false,
@@ -358,6 +350,30 @@
             });
         });
 
+        $(document).on('click', '.edit-button', function() {
+            var url = $(this).data('url');
+            $.get(url, function(response) {
+                if (response.success) {
+                    $('#primary_id').val(response.data.id);
+                    var option = new Option(response.data.lokasi.nama_kavling, response.data.id_lokasi, true, true);
+                    $('#id_lokasi').append(option).trigger('change');
+                    $('#id_lokasi').prop('disabled', true);
+                    $('#kode_kavling').val(response.data.kode_kavling).prop('readonly', true);
+                    $('#panjang_kanan').val(response.data.panjang_kanan);
+                    $('#panjang_kiri').val(response.data.panjang_kiri);
+                    $('#lebar_depan').val(response.data.lebar_depan);
+                    $('#lebar_belakang').val(response.data.lebar_belakang);
+                    $('#luas_tanah').val(response.data.luas_tanah);
+                    $('#hrg_meter').val(response.data.hrg_meter.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
+                    $('#hrg_jual').val(response.data.hrg_jual.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
+                    $('#keterangan').val(response.data.keterangan);
+
+                    $('#modalFormLabel').text('Edit Kavling');
+                    $('#modalForm').modal('show');
+                }
+            });
+        });
+
         function reloadTable() {
             table.ajax.reload(null, false);
         }
@@ -366,8 +382,8 @@
             $('#formData')[0].reset();
 
             $('#primary_id').val('');
-            $('#id_lokasi').val('').trigger('change');
-            $('#kode_kavling').val('');
+            $('#id_lokasi').val('').trigger('change').prop('disabled', false);
+            $('#kode_kavling').val('').prop('readonly', false);
             $('#panjang_kanan').val('');
             $('#panjang_kiri').val('');
             $('#lebar_depan').val('');
@@ -376,6 +392,8 @@
             $('#hrg_meter').val('');
             $('#hrg_jual').val('');
             $('#keterangan').val('');
+
+            $('#modalFormLabel').text('Form Kavling');
 
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
@@ -424,7 +442,7 @@
                     if (res.success) {
                         $('#modalForm').modal('hide');
                         audio.play();
-                        let msg = id ? "Pengguna berhasil diupdate!" : "Pengguna berhasil ditambahkan!";
+                        let msg = id ? "Data berhasil diupdate!" : "Data berhasil ditambahkan!";
                         toastr.success(msg, "BERHASIL", {
                             progressBar: true,
                             timeOut: 3500,

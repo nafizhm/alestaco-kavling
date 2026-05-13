@@ -66,10 +66,10 @@ class KavlingController extends Controller
 
                     if ($permissions['edit']) {
                         $btn .= '
-                            <a href="' . route('kavling.edit', $row->id) . '"
-                                class="edit btn btn-warning btn-sm">
+                            <button type="button" data-url="' . route('kavling.edit', $row->id) . '"
+                                class="edit-button btn btn-warning btn-sm">
                                 Edit
-                            </a>
+                            </button>
                         ';
                     }
 
@@ -84,7 +84,7 @@ class KavlingController extends Controller
                         $btn .= '
                         <form action="' . e($deleteUrl) . '" method="POST" style="display:inline;">
                             ' . csrf_field() . method_field('DELETE') . '
-                            <button type="submit" class="delete-button btn btn-danger btn-sm mt-1">
+                            <button type="submit" class="delete-button btn btn-danger btn-sm">
                                 Hapus
                             </button>
                         </form>';
@@ -115,7 +115,12 @@ class KavlingController extends Controller
     public function edit($id)
     {
         $data = KavlingPeta::with('lokasi')->findOrFail($id);
-        return view('admin.master.kavling.edit', compact('data'));
+        $fotos = FotoKavling::where('id_kavling', $id)->get();
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+            'fotos' => $fotos
+        ], 200);
     }
 
     public function update(Request $request, $id)
@@ -212,6 +217,7 @@ class KavlingController extends Controller
             'hrg_meter'       => 'required',
             'hrg_jual'        => 'required',
             'keterangan'      => 'nullable',
+            'no_sertifikat'   => 'nullable|string|max:35',
         ], [
             'id_lokasi.required'       => 'Nama cluster wajib dipilih',
             'kode_kavling.required'    => 'Kode kavling wajib diisi',
@@ -242,6 +248,7 @@ class KavlingController extends Controller
             'hrg_meter' => $hargaPerMeter,
             'hrg_jual'        => $hargaJual,
             'keterangan'      => $request->keterangan,
+            'no_sertifikat'   => $request->no_sertifikat ?? '',
         ]);
 
          return response()->json([
